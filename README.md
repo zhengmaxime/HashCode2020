@@ -1,3 +1,3 @@
 # Google Hash Code 2020
 
-Total score: 22 069 650
+Total score: 25 236 841

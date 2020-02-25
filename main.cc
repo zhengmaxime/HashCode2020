@@ -34,10 +34,17 @@ struct lib
     int nbBooks;
     int daysForSignup;
     int booksPerDay;
+    int score;
     vector<shared_ptr<struct book>> books;
 
-    bool operator< (const struct lib &other) const {
-        return daysForSignup < other.daysForSignup;
+    int getRatio() const
+    {
+        return score / daysForSignup + books.size() / booksPerDay;
+    }
+
+    bool operator> (const struct lib &other) const
+    {
+        return getRatio() > other.getRatio();
     }
 };
 
@@ -94,6 +101,7 @@ void parse()
     {
         struct lib l;
         l.id = i;
+        l.score = 0;
         f >> l.nbBooks;
         f >> l.daysForSignup;
         f >> l.booksPerDay;
@@ -102,6 +110,7 @@ void parse()
             int iBook;
             f >> iBook;
             l.books.push_back(allBooks[iBook]);
+            l.score += allBooks[iBook]->score;
         }
         libs.push_back(l);
     }
@@ -109,7 +118,7 @@ void parse()
 
 void scan()
 {
-    sort(libs.begin(), libs.end());
+    sort(libs.begin(), libs.end(), greater<>());
     for (auto itLib = libs.begin(); itLib != libs.end(); ++itLib)
     {
         sort(itLib->books.begin(), itLib->books.end(), bookPtrCompare());
