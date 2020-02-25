@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <vector>
 using namespace std;
 
@@ -18,13 +19,22 @@ struct book
     }
 };
 
+struct bookPtrCompare
+{
+    bool operator()(const shared_ptr<struct book> b1,
+                    const shared_ptr<struct book> b2) const
+    {
+        return *b1 > *b2;
+    }
+};
+
 struct lib
 {
     int id;
     int nbBooks;
     int daysForSignup;
     int booksPerDay;
-    vector<struct book> books;
+    vector<shared_ptr<struct book>> books;
 
     bool operator< (const struct lib &other) const {
         return daysForSignup < other.daysForSignup;
@@ -60,8 +70,8 @@ int nbTotalBooks = 0;
 int nbLibs = 0;
 int daysForScan = 0;
 
-vector<int> scores;
 vector<struct lib> libs;
+vector<shared_ptr<struct book>> allBooks;
 
 struct submission sb;
 
@@ -77,7 +87,7 @@ void parse()
     for (int i = 0; i < nbTotalBooks; ++i)
     {
         f >> score;
-        scores.push_back(score);
+        allBooks.push_back(make_shared<struct book>(i, score));
     }
 
     for (int i = 0; i < nbLibs; ++i)
@@ -91,7 +101,7 @@ void parse()
         {
             int iBook;
             f >> iBook;
-            l.books.emplace_back(iBook, scores[iBook]);
+            l.books.push_back(allBooks[iBook]);
         }
         libs.push_back(l);
     }
@@ -99,10 +109,10 @@ void parse()
 
 void scan()
 {
-    std::sort(libs.begin(), libs.end());
+    sort(libs.begin(), libs.end());
     for (auto itLib = libs.begin(); itLib != libs.end(); ++itLib)
     {
-        std::sort(itLib->books.begin(), itLib->books.end(), greater<>());
+        sort(itLib->books.begin(), itLib->books.end(), bookPtrCompare());
     }
 
 }
@@ -118,7 +128,7 @@ void buildSubmission()
         auto booksLib = vector<int>();
         for (auto itBook = itLib->books.begin(); itBook != itLib->books.end(); ++itBook)
         {
-            booksLib.push_back(itBook->id);
+            booksLib.push_back((*itBook)->id);
         }
 
         sb.books.push_back(booksLib);
