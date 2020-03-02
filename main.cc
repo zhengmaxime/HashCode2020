@@ -35,6 +35,7 @@ struct lib
     int daysForSignup;
     int booksPerDay;
     int score;
+    int dayFirstScan;
     vector<shared_ptr<struct book>> books;
 
     int getRatio() const
@@ -79,6 +80,7 @@ int daysForScan = 0;
 
 vector<struct lib> libs;
 vector<shared_ptr<struct book>> allBooks;
+vector<bool> scannedBooks;
 
 struct submission sb;
 
@@ -114,16 +116,45 @@ void parse()
         }
         libs.push_back(l);
     }
+    scannedBooks = vector<bool>(nbTotalBooks, false);
 }
 
 void scan()
 {
+    // SORT LIBS AND BOOKS
     sort(libs.begin(), libs.end(), greater<>());
     for (auto itLib = libs.begin(); itLib != libs.end(); ++itLib)
     {
         sort(itLib->books.begin(), itLib->books.end(), bookPtrCompare());
     }
 
+    // FIND THE DAY OF THE FIRST SCAN FOR EACH LIB
+    int d = 0;
+    for (auto itLib = libs.begin(); itLib != libs.end(); ++itLib)
+    {
+        d += itLib->daysForSignup;
+        itLib->dayFirstScan = d;
+    }
+
+    // REMOVE DUPLICATE SCANS
+    for (int d = 0; d < daysForScan; ++d)
+    {
+        for (auto itLib = libs.begin(); itLib != libs.end(); ++itLib)
+        {
+            if (itLib->dayFirstScan > d)
+                continue;
+
+            unsigned bookIndex = d - itLib->dayFirstScan;
+            if (bookIndex < itLib->books.size())
+            {
+                int idBook = itLib->books[bookIndex]->id;
+                if (!scannedBooks[idBook])
+                    scannedBooks[idBook] = true;
+                else
+                    itLib->books.erase(itLib->books.begin() + bookIndex);
+            }
+        }
+    }
 }
 
 void buildSubmission()
@@ -132,7 +163,7 @@ void buildSubmission()
     for (auto itLib = libs.begin(); itLib != libs.end(); ++itLib)
     {
         sb.libs.push_back(itLib->id);
-        sb.nbBooks.push_back(itLib->nbBooks);
+        sb.nbBooks.push_back(itLib->books.size());
 
         auto booksLib = vector<int>();
         for (auto itBook = itLib->books.begin(); itBook != itLib->books.end(); ++itBook)
